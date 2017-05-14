@@ -9,6 +9,10 @@ import re
 
 #conf
 my_wlif = "wlp3s0"
+#note that these threshold values are logarithmic!
+bad_conn_threshold = -80
+diff_from_bad_conn_threshold = -5
+diff_threshold = -30
 
 def link_cmd(wlif):
     return "sudo iw dev " + wlif + " link"
@@ -30,6 +34,9 @@ def scan_cmd(wlif, ssid="", freq=0):
     else:
         return base_scan_cmd + " ssid " + ssid + " freq " + freq
 
+def disconnect_cmd(wlif):
+    return "sudo iw dev " + wlif + " disconnect"
+
 def cmd_run(cmd_string):
     try:
         result = subprocess.run(cmd_string.split(' '), stdout=subprocess.PIPE,
@@ -38,7 +45,7 @@ def cmd_run(cmd_string):
     except subprocess.CalledProcessError as e:
         raise e
 
-
+#regex
 match_mac = r"([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})"
 match_power = r"((-)?\d+(\.\d+)?) dBm"
 
@@ -66,8 +73,8 @@ class ConnInfo:
         return "\n".join(["BSSID: " + self.bssid,
                 "SSID: " + self.ssid,
                 "Freq: " + self.freq,
-                "Signal: " + self.signal,
-                "Avg Signal: " + self.avg_signal])
+                "Signal: " + str(self.signal),
+                "Avg Signal: " + str(self.avg_signal)])
 
 class ApInfo:
     def __init__(self, bssid, ssid, freq, signal):
@@ -83,7 +90,7 @@ class ApInfo:
         return "\n".join(["BSSID: " + self.bssid,
                 "SSID: " + self.ssid,
                 "Freq: " + self.freq,
-                "Signal: " + self.signal])
+                "Signal: " + str(self.signal)])
 
 def handle_iw_cmd_error(e):
     assert e is subprocess.CalledProcessError
@@ -131,12 +138,12 @@ def parse_current_connection_info(link_output, station_dump_output):
     for l in station_dump_output.splitlines()[1:]:
         res_signal = re.match(match_signal, l)
         if res_signal:
-            signal = res_signal.groups()[0]
+            signal = int(res_signal.groups()[1])
             continue
 
         res_avg_signal = re.match(match_avg_signal, l)
         if res_avg_signal:
-            avg_signal = res_avg_signal.groups()[0]
+            avg_signal = int(res_avg_signal.groups()[1])
 
     assert signal, "No signal"
     assert avg_signal, "No average signal"
@@ -178,7 +185,7 @@ def parse_ap_info(scan_output):
 
         res_signal = re.match(match_signal, l)
         if res_signal is not None:
-            signal = res_signal.groups()[0]
+            signal = int(float(res_signal.groups()[1]))
             continue
 
         res_ssid = re.match(match_ssid_from_link, l)
@@ -188,7 +195,6 @@ def parse_ap_info(scan_output):
 
     add_last_ap(ap_list, bssid, ssid, freq, signal)
     return ap_list, current_bssid
-
 
 def gather_current_connection_info(wlif):
     #TODO: make this loop a decorator if possible
@@ -214,28 +220,81 @@ def gather_ap_info(wlif, ssid="", freq=0):
 
     return parse_ap_info(scan_out)
 
+def try_iw_cmd_once(cmd):
+    try:
+        cmd_run(cmd)
+    except subprocess.CalledProcessError as e:
+        print("iw command failed:", " ".join(e.cmd))
+        print("with output:", e.stderr)
+
+
 #TODO: below should form the main function
-cur_conn_info = gather_current_connection_info(my_wlif)
+try:
+    cur_conn_info = gather_current_connection_info(my_wlif)
+except ValueError as e:
+    if e.args[0] == "BSSID":
+        print("AP changed while gathering info")
+        exit(0)
+    else:
+        #raise e
+        exit(0)
+
 if cur_conn_info is not None:
+    print("Current connection")
     print(cur_conn_info)
+    print("==================")
 
 #try to disable rssi qualiy check before scan
-try:
-    cmd_run(turn_off_cqm_cmd(my_wlif))
-except subprocess.CalledProcessError as e:
-    print("iw command failed:", " ".join(e.cmd))
-    print("with output:", e.stderr)
+try_iw_cmd_once(turn_off_cqm_cmd(my_wlif))
 
 #run scan
 ap_list = gather_ap_info(my_wlif)
 if ap_list is not None:
+    if ap_list[1] != cur_conn_info.bssid:
+        print("AP changed while gathering info")
+        exit(0)
+    print("List of current APs")
     for ap in ap_list[0]:
         print(ap)
+    print("==================")
     print("current bssid is:", ap_list[1])
+    print("current signal / avg signal:", cur_conn_info.signal, "/",
+          cur_conn_info.avg_signal)
+else:
+    exit(0)
 
+#check if there is a better AP with stronger power
+#with matching ssid of course
+same_ssid_aps = sorted(filter(lambda ap: ap.ssid == cur_conn_info.ssid, ap_list[0]),
+                 key=lambda ap: ap.signal, reverse=True)
+if len(same_ssid_aps) > 1:
+    print("APs broadcasting the SSID", cur_conn_info.ssid, "by power")
+    for ap in same_ssid_aps:
+        if ap.bssid == cur_conn_info.bssid:
+            print("Current AP:", ap.bssid, ap.signal)
+        else:
+            print("Alternative AP:", ap.bssid, ap.signal)
 
+    alt_aps = list(filter(lambda ap: ap.bssid != cur_conn_info.bssid,
+                          same_ssid_aps))
 
+    if cur_conn_info.avg_signal < bad_conn_threshold:
+        #choose best alternative if connection is already too bad
+        if cur_conn_info.signal - alt_aps[0].signal < diff_from_bad_conn_threshold:
+            #TODO: Not implemented, just disconnect and hope wireless manager
+            #TODO: connects to the best AP
+            try_iw_cmd_once(disconnect_cmd(my_wlif))
+            print("Disconnected for a better AP")
+    else:
+        #only change AP it is significantly better
+        if cur_conn_info.signal - alt_aps[0].signal < diff_threshold:
+            #TODO: Not implemented, just disconnect and hope wireless manager
+            #TODO: connects to the best AP
+            try_iw_cmd_once(disconnect_cmd(my_wlif))
+            print("Disconnected for a better AP")
+    exit(0)
 
-
-
+else:
+    print("Only the connected AP exists with the same SSID!")
+    exit(0)
 
