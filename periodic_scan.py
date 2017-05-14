@@ -152,8 +152,10 @@ def add_last_ap(list, bssid, ssid, freq, signal):
         bssid, freq, signal, ssid = [None]*4
 
 def parse_ap_info(scan_output):
-    #TODO: check if this assertion is correct
-    assert len(scan_output) > 0, "No APs found!"
+    if len(scan_output) == 0:
+        print("No APs found!")
+        return
+
     current_bssid = None
     bssid, freq, signal, ssid = [None]*4
     ap_list = []
