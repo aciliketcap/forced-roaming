@@ -6,6 +6,7 @@
 
 import re
 import subprocess
+from time import sleep
 from cmd import Cmd
 
 class ConnInfo:
@@ -69,7 +70,9 @@ class IwCmd(Cmd):
             except subprocess.CalledProcessError as e:
                 if retry:
                     if re.match(self.match_iw_busy, e.stderr.decode("utf-8")):
+                        #test here by running scan on another terminal
                         print("Got busy error, retrying...")
+                        sleep(1)
                         continue
                 print("iw command failed:", " ".join(e.cmd))
                 if re.match(self.match_iw_no_device, e.stderr.decode("utf-8")):
