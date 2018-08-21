@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-
 #TODO: Do I need to parse stderr or does iw set return code accordingly?
 #TODO: Does connection info commands also fail with busy?
 #TODO: If we get busy error we should retry after a short timeout!
