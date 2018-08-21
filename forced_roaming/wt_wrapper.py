@@ -1,5 +1,10 @@
 #!/usr/bin/python3
 
+iw ciktilarini dosyalara atip atip duralim. Bunun mocku sadece dosyalari acip
+versin.
+wt wrapper diye wireless_tools wrapper anlaminda demistim. Madem iw kullaniyoz,
+iw_wrapper diyelim. Kodu okuyanin kafasi karismasin
+
 #TODO: Do I need to parse stderr or does iw set return code accordingly?
 #TODO: Does connection info commands also fail with busy?
 #TODO: If we get busy error we should retry after a short timeout!

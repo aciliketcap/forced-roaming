@@ -1,17 +1,13 @@
-#!/usr/bin/python3
+"""scan module provides a mechanism to scan APs and then decide whether to
+disconnect from the current AP or continue with current one."""
 from wt_wrapper import IwCmd
-import nmcli_wrapper
 
-#TODO: Properly package this script into a class
-#TODO: and get the conf values during init
-#TODO: or take them using getopt
-wlif = "wlp8s0"
-#note that these threshold values are logarithmic!
-bad_conn_threshold = -80
-diff_from_bad_conn_threshold = -5
-diff_threshold = -30
-
-if __name__=="__main__":
+def rescan_for_better_ap(wlif,
+                         switch_ap_func,
+                         bad_conn_threshold=-80,
+                         diff_from_bad_conn_threshold=-5,
+                         diff_threshold=-30):
+    #note that threshold values are logarithmic!
     try:
         iw = IwCmd(wlif)
         try:
@@ -51,7 +47,7 @@ if __name__=="__main__":
         #check if there is a better AP with stronger power
         #with matching ssid of course
         same_ssid_aps = sorted(filter(lambda ap: ap.ssid == cur_conn_info.ssid, ap_list[0]),
-                         key=lambda ap: ap.signal, reverse=True)
+                               key=lambda ap: ap.signal, reverse=True)
         if len(same_ssid_aps) > 1:
             print("APs broadcasting the SSID", cur_conn_info.ssid, "by power")
             for ap in same_ssid_aps:
@@ -66,17 +62,15 @@ if __name__=="__main__":
             if cur_conn_info.avg_signal < bad_conn_threshold:
                 #choose best alternative if connection is already too bad
                 if cur_conn_info.signal - alt_aps[0].signal < diff_from_bad_conn_threshold:
-                    #TODO: Not implemented, just disconnect and hope wireless manager
-                    #TODO: connects to the best AP
-                    disconnect_cmd()
-                    print("Disconnected for a better AP")
+                    print("Found a better AP:", alt_aps[0].bssid,
+                          "Trying to switch.")
+                    switch_ap_func(wlif, alt_aps[0].bssid)
             else:
                 #only change AP it is significantly better
                 if cur_conn_info.signal - alt_aps[0].signal < diff_threshold:
-                    #TODO: Not implemented, just disconnect and hope wireless manager
-                    #TODO: connects to the best AP
-                    disconnect_cmd()
-                    print("Disconnected for a better AP")
+                    print("Found a better AP:", alt_aps[0].bssid,
+                          "Trying to switch.")
+                    switch_ap_func(wlif, alt_aps[0].bssid)
             exit(0)
 
         else:
@@ -85,4 +79,3 @@ if __name__=="__main__":
     except AssertionError as e:
         print(" ".join(e.args))
         exit(0)
-
