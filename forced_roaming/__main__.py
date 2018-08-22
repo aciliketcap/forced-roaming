@@ -3,7 +3,7 @@
 alternative AP is better than the AP the device is currently connected."""
 import argparse
 from . import scan
-from .wt_wrapper import IwCmd
+from .iw_wrapper import IwCmd
 
 #default values for command arguments
 default_bad_conn_threshold = -80
