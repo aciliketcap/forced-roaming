@@ -44,7 +44,8 @@ class IwCmd(Cmd):
 
     #regex for parsing iw cmd output
     match_mac = r"([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})"
-    match_power = r"((-)?\d+(\.\d+)?) dBm"
+    match_power_from_link = r"((-)?\d+(\.\d+)?) dBm"
+    match_power_from_assoc_dump = r"((-)?\d+)\s"
 
     match_link_failed = r"Not connected."
     match_iw_no_device = r"^command failed: No such device"
@@ -54,8 +55,10 @@ class IwCmd(Cmd):
     match_ssid_from_link = r"\s+SSID:\s+(.*)$"
     match_freq_from_link = r"\s+freq:\s+(\d*)"
     match_bssid_from_station_dump = r"Station\s+(" + match_mac + ")"
-    match_signal = r"\s+signal:\s+(" + match_power +")"
-    match_avg_signal = r"\s+signal avg:\s+(" + match_power +")"
+    match_signal_from_link = r"\s+signal:\s+(" + match_power_from_link +")"
+    match_avg_signal_from_link = r"\s+signal avg:\s+(" + match_power_from_link +")"
+    match_signal_from_assoc_dump = r"\s+signal:\s+(" + match_power_from_assoc_dump +")"
+    match_avg_signal_from_assoc_dump = r"\s+signal avg:\s+(" + match_power_from_assoc_dump +")"
     match_bssid_from_scan = r"^BSS (" + match_mac + ")"
     match_is_cur_bssid_from_scan = r"^BSS.*associated$"
 
@@ -138,12 +141,12 @@ class IwCmd(Cmd):
             raise AssertionError("No freq")
 
         for l in station_dump_output.splitlines()[1:]:
-            res_signal = re.match(self.match_signal, l)
+            res_signal = re.match(self.match_signal_from_assoc_dump, l)
             if res_signal:
                 signal = int(res_signal.groups()[1])
                 continue
 
-            res_avg_signal = re.match(self.match_avg_signal, l)
+            res_avg_signal = re.match(self.match_avg_signal_from_assoc_dump, l)
             if res_avg_signal:
                 avg_signal = int(res_avg_signal.groups()[1])
 
@@ -187,7 +190,7 @@ class IwCmd(Cmd):
                 freq = res_freq.groups()[0]
                 continue
 
-            res_signal = re.match(self.match_signal, l)
+            res_signal = re.match(self.match_signal_from_link, l)
             if res_signal is not None:
                 signal = int(float(res_signal.groups()[1]))
                 continue
