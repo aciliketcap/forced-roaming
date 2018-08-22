@@ -1,8 +1,7 @@
 """scan module provides a mechanism to scan APs and then decide whether to
 disconnect from the current AP or continue with current one."""
-from wt_wrapper import IwCmd
-import argparse
-#TODO: implement scan period and debug mode
+from .wt_wrapper import IwCmd
+#TODO: implement debug mode
 #TODO: print executed commands and execution times in debug mode
 
 def rescan_for_better_ap(wlif,

@@ -8,4 +8,3 @@ class Cmd:
             return result.stdout.decode("utf-8")
         except subprocess.CalledProcessError as e:
             raise e
-

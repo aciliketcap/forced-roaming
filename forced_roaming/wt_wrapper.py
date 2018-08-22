@@ -5,7 +5,7 @@
 import re
 import subprocess
 from time import sleep
-from cmd import Cmd
+from .cmd import Cmd
 
 class ConnInfo:
     def __init__(self, bssid, ssid, freq, signal, avg_signal):
@@ -212,4 +212,3 @@ class IwCmd(Cmd):
 
     def gather_ap_info(self, ssid="", freq=0):
         return self.parse_ap_info(self.scan(ssid, freq, True))
-
