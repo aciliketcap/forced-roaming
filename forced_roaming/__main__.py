@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""forced_roaming module provides a mechanism to switch between APs when an
+"""forced_roaming package provides a mechanism to switch between APs when an
 alternative AP is better than the AP the device is currently connected."""
 import argparse
 from . import scan
