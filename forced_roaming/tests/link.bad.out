@@ -1,0 +1,11 @@
+Connected to aa:aa:aa:aa:aa:00 (on wlan0)
+	SSID: test
+	freq: 2417
+	RX: 0 bytes (0 packets)
+	TX: 0 bytes (0 packets)
+	signal: -82 dBm
+	tx bitrate: 0.0 MBit/s MCS 4 short GI
+
+	bss flags:	short-preamble short-slot-time
+	dtim period:	1
+	beacon int:	100

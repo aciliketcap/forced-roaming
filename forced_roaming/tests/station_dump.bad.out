@@ -1,0 +1,26 @@
+Station aa:aa:aa:aa:aa:00 (on wlan0)
+	inactive time:	0 ms
+	rx bytes:	0
+	rx packets:	0
+	tx bytes:	0
+	tx packets:	0
+	tx retries:	0
+	tx failed:	0
+	beacon loss:	0
+	rx drop misc:	0
+	signal:  	-82 [-82, -80] dBm
+	signal avg:	-85 [-89, -85] dBm
+	tx bitrate:	0 MBit/s MCS 5 short GI
+	rx bitrate:	0 MBit/s MCS 7
+	authorized:	yes
+	authenticated:	yes
+	associated:	yes
+	preamble:	long
+	WMM/WME:	yes
+	MFP:		no
+	TDLS peer:	no
+	DTIM period:	1
+	beacon interval:100
+	short preamble:	yes
+	short slot time:yes
+	connected time:	0 seconds
