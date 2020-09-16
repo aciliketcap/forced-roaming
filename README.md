@@ -1,3 +1,5 @@
+[Note that this repo does not reflect how I code Python now, maybe I'll rewrite this as an adept Pythonista some day ;)]
+
 forced_roaming package provides a mechanism to switch between APs when an
 alternative AP is better than the AP the device is currently connected.
 
